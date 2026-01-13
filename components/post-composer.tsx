@@ -71,8 +71,8 @@ export function PostComposer({ userName, userId, onPostCreated }: PostComposerPr
   return (
     <Card className="w-full">
       <CardContent className="pt-4">
-        <div className="flex gap-3">
-          <Avatar className="h-10 w-10">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Avatar className="h-10 w-10 shrink-0">
             <AvatarFallback className="bg-primary/10 text-primary">{getInitials(userName)}</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-3">

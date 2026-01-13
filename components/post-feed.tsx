@@ -240,19 +240,52 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
     <>
       <div className="space-y-4">
         {posts.map((post) => (
-          <Card key={post.id} className="w-full">
+          <Card key={post.id} className="w-full overflow-hidden">
             <CardContent className="pt-4">
-              <div className="flex gap-3">
-                <Avatar className="h-10 w-10 shrink-0">
-                  <AvatarFallback className="bg-primary/10 text-primary">{getInitials(userName)}</AvatarFallback>
-                </Avatar>
+              <div className="flex flex-col gap-3 sm:flex-row sm:gap-3">
+                <div className="flex items-center gap-3 sm:contents">
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarFallback className="bg-primary/10 text-primary">{getInitials(userName)}</AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex items-center gap-1 ml-auto sm:hidden">
+                    {!post.decryptError && editingPostId !== post.id && (
+                      <>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDate(post.updatedAt || post.createdAt)}
+                          {post.updatedAt && " (edited)"}
+                        </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Post options</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(post)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setDeletePostId(post.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex-1 min-w-0">
                   {post.decryptError ? (
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Lock className="h-4 w-4" />
-                        <span className="text-sm">Unable to decrypt this post</span>
-                      </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Lock className="h-4 w-4" />
+                      <span className="text-sm">Unable to decrypt this post</span>
                     </div>
                   ) : editingPostId === post.id ? (
                     <div className="space-y-2">
@@ -290,10 +323,12 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
-                      {/* Date and menu - on top for mobile, inline for larger screens */}
-                      <div className="flex items-center justify-between sm:order-2 sm:justify-end gap-1 shrink-0">
-                        <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                    <div className="flex items-start gap-2">
+                      {/* Content takes full width on mobile, shares row on desktop */}
+                      <p className="flex-1 whitespace-pre-wrap break-words">{post.decryptedContent}</p>
+
+                      <div className="hidden sm:flex items-center gap-1 shrink-0">
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">
                           {formatDate(post.updatedAt || post.createdAt)}
                           {post.updatedAt && " (edited)"}
                         </span>
@@ -319,8 +354,6 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                      {/* Content - full width on mobile, grows on larger screens */}
-                      <p className="flex-1 whitespace-pre-wrap break-words sm:order-1">{post.decryptedContent}</p>
                     </div>
                   )}
                 </div>
