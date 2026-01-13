@@ -57,18 +57,18 @@ All data is stored in Upstash Redis with the following key patterns:
 
 ### 1. Clone the Repository
 
-```bash
+\`\`\`bash
 git clone https://github.com/alpharomercoma/setsunai.git
 cd setsunai
-```
+\`\`\`
 
 ### 2. Install Dependencies
 
-```bash
+\`\`\`bash
 npm install
 # or
 bun install
-```
+\`\`\`
 
 ### 3. Set Up Upstash Redis
 
@@ -80,7 +80,7 @@ bun install
 
 Create a `.env.local` file in the root directory:
 
-```env
+\`\`\`env
 # Required - Upstash Redis
 KV_REST_API_URL=https://your-database.upstash.io
 KV_REST_API_TOKEN=your-upstash-token
@@ -95,15 +95,15 @@ EMAIL_FROM=Setsunai <noreply@yourdomain.com>
 # Optional - Google OAuth
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-```
+\`\`\`
 
 ### 5. Run the Development Server
 
-```bash
+\`\`\`bash
 npm run dev
 # or
 bun dev
-```
+\`\`\`
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
@@ -118,10 +118,10 @@ The easiest way to deploy is with [Vercel](https://vercel.com):
 
 Alternatively, use the Vercel CLI:
 
-```bash
+\`\`\`bash
 npm i -g vercel
 vercel
-```
+\`\`\`
 
 ## Environment Variables Reference
 

@@ -248,13 +248,10 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-medium truncate">{userName}</span>
-                      <span className="text-sm text-muted-foreground whitespace-nowrap">
-                        {formatDate(post.updatedAt || post.createdAt)}
-                        {post.updatedAt && " (edited)"}
-                      </span>
-                    </div>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
+                      {formatDate(post.updatedAt || post.createdAt)}
+                      {post.updatedAt && " (edited)"}
+                    </span>
                     {!post.decryptError && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
