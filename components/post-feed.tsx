@@ -238,17 +238,22 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {posts.map((post) => (
           <Card key={post.id} className="w-full">
-            <CardContent className="pt-4">
-              <div className="flex gap-3">
-                <Avatar className="h-10 w-10 shrink-0">
-                  <AvatarFallback className="bg-primary/10 text-primary">{getInitials(userName)}</AvatarFallback>
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex gap-2 sm:gap-3">
+                {/* Avatar - stays on top-left */}
+                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 shrink-0">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs sm:text-sm">
+                    {getInitials(userName)}
+                  </AvatarFallback>
                 </Avatar>
+
+                {/* Main content area */}
                 <div className="flex-1 min-w-0">
                   {post.decryptError ? (
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Lock className="h-4 w-4" />
                         <span className="text-sm">Unable to decrypt this post</span>
@@ -259,7 +264,7 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                       <Textarea
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
-                        className="min-h-[80px] resize-none"
+                        className="min-h-[80px] resize-none text-sm sm:text-base"
                         disabled={saving}
                       />
                       <div className="flex gap-2 justify-end">
@@ -290,37 +295,42 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      {/* Content on the left, grows to fill space */}
-                      <p className="flex-1 whitespace-pre-wrap break-words">{post.decryptedContent}</p>
-                      {/* Date and menu aligned to the right, stay on first line */}
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">
-                          {formatDate(post.updatedAt || post.createdAt)}
-                          {post.updatedAt && " (edited)"}
-                        </span>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Post options</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(post)}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => setDeletePostId(post.id)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div className="space-y-1">
+                      {/* First row: Name on left, Date + Menu on right */}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-sm sm:text-base truncate">{userName}</span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                            {formatDate(post.updatedAt || post.createdAt)}
+                            {post.updatedAt && " (edited)"}
+                          </span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Post options</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEdit(post)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setDeletePostId(post.id)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
+                      {/* Second row: Content - full width, can span multiple lines */}
+                      <p className="text-sm sm:text-base whitespace-pre-wrap break-words leading-relaxed">
+                        {post.decryptedContent}
+                      </p>
                     </div>
                   )}
                 </div>
