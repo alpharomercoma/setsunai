@@ -247,42 +247,45 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                   <AvatarFallback className="bg-primary/10 text-primary">{getInitials(userName)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-sm text-muted-foreground whitespace-nowrap">
                       {formatDate(post.updatedAt || post.createdAt)}
                       {post.updatedAt && " (edited)"}
                     </span>
-                    {!post.decryptError && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Post options</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(post)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDeletePostId(post.id)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">{userName}</span>
+                      {!post.decryptError && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Post options</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(post)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setDeletePostId(post.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                   </div>
                   {post.decryptError ? (
-                    <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="mt-2 flex items-center gap-2 text-muted-foreground">
                       <Lock className="h-4 w-4" />
                       <span className="text-sm">Unable to decrypt this post</span>
                     </div>
                   ) : editingPostId === post.id ? (
-                    <div className="space-y-2">
+                    <div className="mt-2 space-y-2">
                       <Textarea
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
@@ -317,7 +320,7 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                       </div>
                     </div>
                   ) : (
-                    <p className="whitespace-pre-wrap break-words">{post.decryptedContent}</p>
+                    <p className="mt-2 whitespace-pre-wrap break-words">{post.decryptedContent}</p>
                   )}
                 </div>
               </div>
