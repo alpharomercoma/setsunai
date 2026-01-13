@@ -241,7 +241,7 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
       <div className="space-y-4">
         {posts.map((post) => (
           <Card key={post.id} className="w-full">
-            <CardContent className="p-4 sm:p-6">
+            <CardContent className="pt-4">
               <div className="flex gap-3">
                 <Avatar className="h-10 w-10 shrink-0">
                   <AvatarFallback className="bg-primary/10 text-primary">{getInitials(userName)}</AvatarFallback>
@@ -290,9 +290,10 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-end gap-1">
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+                      {/* Date and menu - on top for mobile, inline for larger screens */}
+                      <div className="flex items-center justify-between sm:order-2 sm:justify-end gap-1 shrink-0">
+                        <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                           {formatDate(post.updatedAt || post.createdAt)}
                           {post.updatedAt && " (edited)"}
                         </span>
@@ -318,9 +319,8 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                      <p className="whitespace-pre-wrap break-words text-base leading-relaxed">
-                        {post.decryptedContent}
-                      </p>
+                      {/* Content - full width on mobile, grows on larger screens */}
+                      <p className="flex-1 whitespace-pre-wrap break-words sm:order-1">{post.decryptedContent}</p>
                     </div>
                   )}
                 </div>
