@@ -243,49 +243,19 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
           <Card key={post.id} className="w-full">
             <CardContent className="pt-4">
               <div className="flex gap-3">
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-10 w-10 shrink-0">
                   <AvatarFallback className="bg-primary/10 text-primary">{getInitials(userName)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">
-                      {formatDate(post.updatedAt || post.createdAt)}
-                      {post.updatedAt && " (edited)"}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium truncate">{userName}</span>
-                      {!post.decryptError && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Post options</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(post)}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => setDeletePostId(post.id)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                  </div>
                   {post.decryptError ? (
-                    <div className="mt-2 flex items-center gap-2 text-muted-foreground">
-                      <Lock className="h-4 w-4" />
-                      <span className="text-sm">Unable to decrypt this post</span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Lock className="h-4 w-4" />
+                        <span className="text-sm">Unable to decrypt this post</span>
+                      </div>
                     </div>
                   ) : editingPostId === post.id ? (
-                    <div className="mt-2 space-y-2">
+                    <div className="space-y-2">
                       <Textarea
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
@@ -320,7 +290,38 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                       </div>
                     </div>
                   ) : (
-                    <p className="mt-2 whitespace-pre-wrap break-words">{post.decryptedContent}</p>
+                    <div className="flex items-start gap-2">
+                      {/* Content on the left, grows to fill space */}
+                      <p className="flex-1 whitespace-pre-wrap break-words">{post.decryptedContent}</p>
+                      {/* Date and menu aligned to the right, stay on first line */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">
+                          {formatDate(post.updatedAt || post.createdAt)}
+                          {post.updatedAt && " (edited)"}
+                        </span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Post options</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(post)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setDeletePostId(post.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
