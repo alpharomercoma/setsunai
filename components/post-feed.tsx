@@ -290,7 +290,7 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-center gap-2">
                       {/* Content on the left, grows to fill space */}
                       <p className="flex-1 whitespace-pre-wrap break-words">{post.decryptedContent}</p>
                       {/* Date and menu aligned to the right, stay on first line */}
