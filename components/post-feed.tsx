@@ -323,7 +323,7 @@ export function PostFeed({ userId, userName, refreshTrigger }: PostFeedProps) {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-center gap-2">
                       {/* Content takes full width on mobile, shares row on desktop */}
                       <p className="flex-1 whitespace-pre-wrap break-words">{post.decryptedContent}</p>
 
