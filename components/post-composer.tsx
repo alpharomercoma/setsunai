@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
-import { Button } from "@/components/ui/button"
-import { Send, Loader2, Lock, Mic, MicOff, AlertCircle } from "lucide-react"
-import { encryptContent, deriveKeyFromPin } from "@/lib/crypto"
+import { Button } from "@/components/ui/button";
+import { deriveKeyFromPin, encryptContent } from "@/lib/crypto";
+import { AlertCircle, Loader2, Lock, Mic, MicOff, Send } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Type declarations for Web Speech API
 interface SpeechRecognitionEvent extends Event {
@@ -87,7 +87,7 @@ export function PostComposer({ userName, userId, onPostCreated }: PostComposerPr
   // Check for speech recognition support and initialize
   useEffect(() => {
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
-    
+
     if (!SpeechRecognitionAPI) {
       setSpeechSupported(false)
       return
@@ -148,7 +148,7 @@ export function PostComposer({ userName, userId, onPostCreated }: PostComposerPr
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error("Speech recognition error:", event.error)
-      
+
       switch (event.error) {
         case "not-allowed":
         case "permission-denied":
@@ -167,7 +167,7 @@ export function PostComposer({ userName, userId, onPostCreated }: PostComposerPr
         default:
           setError(`Speech recognition error: ${event.error}`)
       }
-      
+
       setIsListening(false)
       setInterimTranscript("")
     }
@@ -217,10 +217,10 @@ export function PostComposer({ userName, userId, onPostCreated }: PostComposerPr
 
       // Store current content before starting
       contentBeforeListeningRef.current = content
-      
+
       // Setup handlers and start
       setupRecognitionHandlers()
-      
+
       try {
         recognitionRef.current?.start()
       } catch (err) {
@@ -325,7 +325,7 @@ export function PostComposer({ userName, userId, onPostCreated }: PostComposerPr
                 }
               }}
               onKeyDown={handleKeyDown}
-              className={`w-full min-h-[56px] max-h-[200px] resize-none bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 border-0 text-base leading-relaxed ${isListening ? 'caret-primary' : ''}`}
+              className={"w-full min-h-[56px] max-h-[200px] resize-none bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 text-base leading-relaxed"}
               disabled={loading}
               rows={2}
             />
@@ -367,17 +367,17 @@ export function PostComposer({ userName, userId, onPostCreated }: PostComposerPr
             size="sm"
             variant={isListening ? "destructive" : "outline"}
             className={`h-8 px-3 text-xs font-medium transition-all ${
-              isListening 
-                ? 'animate-pulse' 
-                : !speechSupported 
-                  ? 'opacity-50 cursor-not-allowed' 
+              isListening
+                ? 'animate-pulse'
+                : !speechSupported
+                  ? 'opacity-50 cursor-not-allowed'
                   : ''
             }`}
             title={
-              !speechSupported 
-                ? "Speech recognition not supported in this browser" 
-                : isListening 
-                  ? "Stop recording" 
+              !speechSupported
+                ? "Speech recognition not supported in this browser"
+                : isListening
+                  ? "Stop recording"
                   : "Start voice input"
             }
           >

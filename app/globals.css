@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Remove focus outlines from textareas */
+textarea:focus,
+textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
 /* Base theme variables */
 :root {
   --font-sans: "Crimson Pro", Georgia, "Times New Roman", serif;
