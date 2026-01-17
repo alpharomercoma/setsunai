@@ -1,36 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions, redis } from "@/lib/auth-options"
-
-// Extended session type with user id
-interface SessionWithId {
-  user?: {
-    id: string
-    name?: string | null
-    email?: string | null
-    image?: string | null
-  }
-  expires: string
-}
-
-interface UserPinData {
-  pinHash: string | null
-  createdAt: number
-  updatedAt?: number
-  name?: string
-}
+import { type SessionWithId, type UserPinData, UserPinDataSchema, safeParseJson } from "@/lib/types"
 
 async function getUserPinData(userId: string): Promise<UserPinData | null> {
   const userData = await redis.get(`setsunai:user:${userId}:pin`)
-  if (!userData) return null
-  if (typeof userData === "string") {
-    try {
-      return JSON.parse(userData) as UserPinData
-    } catch {
-      return null
-    }
-  }
-  return userData as UserPinData
+  return safeParseJson(userData, UserPinDataSchema)
 }
 
 async function updateUserPinData(
@@ -55,7 +30,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const { name, pinHash } = await request.json()
+    const body = await request.json()
+    const { name, pinHash } = body
 
     if (!pinHash || typeof pinHash !== "string") {
       return NextResponse.json({ error: "PIN hash is required" }, { status: 400 })
@@ -66,10 +42,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid PIN hash format" }, { status: 400 })
     }
 
+    // Validate name if provided
+    const sanitizedName = typeof name === "string" ? name.trim().slice(0, 100) : null
+
     // Update user PIN data
     await updateUserPinData(session.user.id, {
       pinHash,
-      name: name || session.user.name || "User",
+      name: sanitizedName || session.user.name || "User",
     })
 
     return NextResponse.json({
@@ -77,7 +56,7 @@ export async function POST(request: NextRequest) {
       user: {
         id: session.user.id,
         email: session.user.email,
-        name: name || session.user.name,
+        name: sanitizedName || session.user.name,
       },
     })
   } catch (error) {

@@ -1,60 +1,83 @@
 import { authOptions, redis } from "@/lib/auth-options";
+import { timingSafeEqual } from "@/lib/crypto";
+import { type SessionWithId, UserPinDataSchema, safeParseJson } from "@/lib/types";
 import { getServerSession } from "next-auth";
 import { type NextRequest, NextResponse } from "next/server";
 
-// Extended session type with user id
-interface SessionWithId {
-  user?: {
-    id: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  };
-  expires: string;
-}
+// Rate limiting constants
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION = 300; // 5 minutes in seconds
 
-interface UserPinData {
-  pinHash: string | null;
-  createdAt: number;
-  updatedAt?: number;
-}
-
-async function getUserPinData(userId: string): Promise<UserPinData | null> {
+async function getUserPinData(userId: string) {
   const userData = await redis.get(`setsunai:user:${userId}:pin`);
-  if (!userData) return null;
-  if (typeof userData === "string") {
-    try {
-      return JSON.parse(userData) as UserPinData;
-    } catch {
-      return null;
-    }
-  }
-  return userData as UserPinData;
+  return safeParseJson(userData, UserPinDataSchema);
+}
+
+async function getRateLimitStatus(userId: string): Promise<{ attempts: number; locked: boolean; }> {
+  const key = `setsunai:ratelimit:pin:${userId}`;
+  const attempts = await redis.get(key);
+  const count = typeof attempts === "number" ? attempts : parseInt(String(attempts) || "0", 10);
+  return {
+    attempts: count,
+    locked: count >= MAX_ATTEMPTS,
+  };
+}
+
+async function incrementRateLimit(userId: string): Promise<void> {
+  const key = `setsunai:ratelimit:pin:${userId}`;
+  await redis.incr(key);
+  await redis.expire(key, LOCKOUT_DURATION);
+}
+
+async function resetRateLimit(userId: string): Promise<void> {
+  const key = `setsunai:ratelimit:pin:${userId}`;
+  await redis.del(key);
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as SessionWithId | null
+    const session = (await getServerSession(authOptions)) as SessionWithId | null
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const { pinHash } = await request.json()
+    const userId = session.user.id;
 
-    if (!pinHash || typeof pinHash !== "string") {
-      return NextResponse.json({ error: "PIN hash is required" }, { status: 400 });
+    // Check rate limiting
+    const { locked } = await getRateLimitStatus(userId);
+    if (locked) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please wait 5 minutes." },
+        { status: 429 }
+      );
     }
 
-    const userData = await getUserPinData(session.user.id)
+    const body = await request.json();
+    const { pinHash } = body
+
+    if (!pinHash || typeof pinHash !== "string") {
+      return NextResponse.json({ error: "PIN hash is required" }, { status: 400 })
+    }
+
+    const userData = await getUserPinData(userId)
 
     if (!userData?.pinHash) {
       return NextResponse.json({ error: "PIN not set up" }, { status: 400 })
     }
 
-    const isValid = userData.pinHash === pinHash
+    // Use timing-safe comparison to prevent timing attacks
+    const isValid = timingSafeEqual(userData.pinHash, pinHash);
 
-    return NextResponse.json({ valid: isValid })
+    if (!isValid) {
+      // Increment failed attempts
+      await incrementRateLimit(userId);
+      return NextResponse.json({ valid: false });
+    }
+
+    // Reset rate limit on successful verification
+    await resetRateLimit(userId);
+    return NextResponse.json({ valid: true })
   } catch (error) {
     console.error("PIN verify error:", error)
     return NextResponse.json({ error: "Verification failed" }, { status: 500 })

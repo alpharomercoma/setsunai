@@ -1,36 +1,11 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions, redis } from "@/lib/auth-options"
+import { type SessionWithId, UserPinDataSchema, safeParseJson } from "@/lib/types"
 
-// Extended session type with user id
-interface SessionWithId {
-  user?: {
-    id: string
-    name?: string | null
-    email?: string | null
-    image?: string | null
-  }
-  expires: string
-}
-
-interface UserPinData {
-  pinHash: string | null
-  createdAt: number
-  updatedAt?: number
-  name?: string
-}
-
-async function getUserPinData(userId: string): Promise<UserPinData | null> {
+async function getUserPinData(userId: string) {
   const userData = await redis.get(`setsunai:user:${userId}:pin`)
-  if (!userData) return null
-  if (typeof userData === "string") {
-    try {
-      return JSON.parse(userData) as UserPinData
-    } catch {
-      return null
-    }
-  }
-  return userData as UserPinData
+  return safeParseJson(userData, UserPinDataSchema)
 }
 
 export async function GET() {

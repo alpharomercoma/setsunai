@@ -1,18 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions, redis } from "@/lib/auth-options"
-import { type Post } from "@/lib/redis"
-
-// Extended session type with user id
-interface SessionWithId {
-  user?: {
-    id: string
-    name?: string | null
-    email?: string | null
-    image?: string | null
-  }
-  expires: string
-}
+import { type SessionWithId, type Post, PostSchema, safeParseJson } from "@/lib/types"
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,6 +20,11 @@ export async function POST(request: NextRequest) {
     // Validate encrypted content format
     if (typeof encryptedContent !== "string" || typeof iv !== "string") {
       return NextResponse.json({ error: "Invalid data format" }, { status: 400 })
+    }
+
+    // Validate max content size (prevent abuse)
+    if (encryptedContent.length > 1_000_000 || iv.length > 100) {
+      return NextResponse.json({ error: "Content too large" }, { status: 413 })
     }
 
     const post: Post = {
@@ -82,12 +76,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ posts: [], nextCursor: null })
     }
 
-    // Fetch post data
+    // Fetch post data with validation
     const posts: Post[] = []
     for (const postId of postIds.slice(0, limit)) {
       const postData = await redis.get(`setsunai:post:${postId}`)
-      if (postData) {
-        const post = typeof postData === "string" ? JSON.parse(postData) : postData
+      const post = safeParseJson(postData, PostSchema)
+      if (post) {
         posts.push(post)
       }
     }
@@ -116,21 +110,30 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Invalid post data" }, { status: 400 })
     }
 
+    if (typeof id !== "string" || typeof encryptedContent !== "string" || typeof iv !== "string") {
+      return NextResponse.json({ error: "Invalid data format" }, { status: 400 })
+    }
+
+    // Validate max content size
+    if (encryptedContent.length > 1_000_000 || iv.length > 100) {
+      return NextResponse.json({ error: "Content too large" }, { status: 413 })
+    }
+
     // Fetch existing post to verify ownership
-    const existingPost = await redis.get(`setsunai:post:${id}`)
+    const existingPostData = await redis.get(`setsunai:post:${id}`)
+    const existingPost = safeParseJson(existingPostData, PostSchema)
+
     if (!existingPost) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
 
-    const post = typeof existingPost === "string" ? JSON.parse(existingPost) : existingPost
-
-    if (post.userId !== session.user.id) {
+    if (existingPost.userId !== session.user.id) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 })
     }
 
     // Update post with new encrypted content
     const updatedPost: Post = {
-      ...post,
+      ...existingPost,
       encryptedContent,
       iv,
       updatedAt: Date.now(),
@@ -160,14 +163,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Fetch existing post to verify ownership
-    const existingPost = await redis.get(`setsunai:post:${id}`)
+    const existingPostData = await redis.get(`setsunai:post:${id}`)
+    const existingPost = safeParseJson(existingPostData, PostSchema)
+
     if (!existingPost) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
 
-    const post = typeof existingPost === "string" ? JSON.parse(existingPost) : existingPost
-
-    if (post.userId !== session.user.id) {
+    if (existingPost.userId !== session.user.id) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 })
     }
 

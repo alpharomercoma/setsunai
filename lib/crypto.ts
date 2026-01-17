@@ -40,11 +40,18 @@ export async function decryptContent(encrypted: string, iv: string, key: CryptoK
   const encryptedData = base64ToBuffer(encrypted)
   const ivData = base64ToBuffer(iv)
 
+  // Copy to a fresh ArrayBuffer to satisfy TypeScript's stricter ArrayBuffer type checking
+  // This is a TypeScript limitation with Web Crypto API types, not a runtime issue
+  const ivCopy = new ArrayBuffer(ivData.length);
+  new Uint8Array(ivCopy).set(ivData);
+
+  const dataCopy = new ArrayBuffer(encryptedData.length);
+  new Uint8Array(dataCopy).set(encryptedData)
+
   const decrypted = await crypto.subtle.decrypt(
-    // @ts-expect-error - Uint8Array type compatibility issue with newer TypeScript
-    { name: "AES-GCM", iv: ivData },
+    { name: "AES-GCM", iv: ivCopy },
     key,
-    encryptedData
+    dataCopy
   )
 
   return decoder.decode(decrypted)
@@ -55,6 +62,24 @@ export async function hashPin(pin: string): Promise<string> {
   const data = encoder.encode(pin)
   const hash = await crypto.subtle.digest("SHA-256", data)
   return bufferToBase64(new Uint8Array(hash))
+}
+
+// Timing-safe string comparison to prevent timing attacks
+export function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    // Still do the comparison to maintain constant time
+    let result = 1;
+    for (let i = 0; i < a.length; i++) {
+      result |= a.charCodeAt(i) ^ a.charCodeAt(i);
+    }
+    return false;
+  }
+
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
 }
 
 function bufferToBase64(buffer: Uint8Array): string {

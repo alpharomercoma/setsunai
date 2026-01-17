@@ -5,12 +5,5 @@ export const redis = new Redis({
   token: process.env.KV_REST_API_TOKEN!,
 })
 
-// Post structure - content is encrypted
-export interface Post {
-  id: string
-  userId: string
-  encryptedContent: string // AES encrypted with user's PIN-derived key
-  iv: string // Initialization vector for decryption
-  createdAt: number
-  updatedAt?: number
-}
+// Re-export Post type from types.ts for backwards compatibility
+export type { Post } from "./types"
