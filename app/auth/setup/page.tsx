@@ -1,23 +1,23 @@
-import { Suspense } from "react"
-import { SetupContent } from "@/components/setup-content"
-import { Footer } from "@/components/footer"
-import { Loader2 } from "lucide-react"
+import { Suspense } from "react";
+import { SetupContent } from "@/components/setup-content";
+import { Footer } from "@/components/footer";
+import { Loader2 } from "lucide-react";
 
 export default function SetupPage() {
   return (
-    <main className="flex min-h-screen flex-col">
-      <div className="flex flex-1 items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col">
+      <main className="flex-1 flex items-center justify-center py-12">
         <Suspense
           fallback={
             <div className="flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
             </div>
           }
         >
           <SetupContent />
         </Suspense>
-      </div>
+      </main>
       <Footer />
-    </main>
-  )
+    </div>
+  );
 }

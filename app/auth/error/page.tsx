@@ -1,12 +1,11 @@
-"use client"
+"use client";
 
-import { useSearchParams } from "next/navigation"
-import { Suspense } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { XCircle } from "lucide-react"
-import { Footer } from "@/components/footer"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { XCircle, Loader2 } from "lucide-react";
+import { Footer } from "@/components/footer";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const errorMessages: Record<string, string> = {
   Configuration: "There is a problem with the server configuration.",
@@ -22,48 +21,55 @@ const errorMessages: Record<string, string> = {
   CredentialsSignin: "Invalid credentials provided.",
   SessionRequired: "Please sign in to access this page.",
   Default: "An unexpected error occurred. Please try again.",
-}
+};
 
 function ErrorContent() {
-  const searchParams = useSearchParams()
-  const error = searchParams.get("error") || "Default"
-  const errorMessage = errorMessages[error] || errorMessages.Default
+  const searchParams = useSearchParams();
+  const error = searchParams.get("error") || "Default";
+  const errorMessage = errorMessages[error] || errorMessages.Default;
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-          <XCircle className="h-6 w-6 text-destructive" />
+    <div className="w-full max-w-sm mx-auto px-6 animate-fade-in">
+      <div className="text-center space-y-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10">
+          <XCircle className="w-7 h-7 text-destructive" />
         </div>
-        <CardTitle>Authentication Error</CardTitle>
-        <CardDescription>{errorMessage}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button className="w-full" asChild>
-          <Link href="/">Back to Sign In</Link>
+
+        <div className="space-y-2">
+          <h1 className="text-2xl font-display font-medium text-foreground">
+            Authentication Error
+          </h1>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {errorMessage}
+          </p>
+        </div>
+
+        <Button
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          asChild
+        >
+          <Link href="/">Try Again</Link>
         </Button>
-      </CardContent>
-    </Card>
-  )
+      </div>
+    </div>
+  );
 }
 
 export default function AuthErrorPage() {
   return (
-    <main className="flex min-h-screen flex-col">
-      <div className="flex flex-1 items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col">
+      <main className="flex-1 flex items-center justify-center py-12">
         <Suspense
           fallback={
-            <Card className="w-full max-w-md">
-              <CardHeader className="text-center">
-                <CardTitle>Loading...</CardTitle>
-              </CardHeader>
-            </Card>
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
+            </div>
           }
         >
           <ErrorContent />
         </Suspense>
-      </div>
+      </main>
       <Footer />
-    </main>
-  )
+    </div>
+  );
 }

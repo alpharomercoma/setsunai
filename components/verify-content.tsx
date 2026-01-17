@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/footer"
+import { AuthShell } from "@/components/auth-shell"
 
 export function VerifyContent() {
   const router = useRouter()
@@ -25,8 +26,8 @@ export function VerifyContent() {
   if (status === "loading") {
     return (
       <main className="flex min-h-screen flex-col">
-        <div className="flex flex-1 items-center justify-center p-4">
-          <Card className="w-full max-w-md">
+        <AuthShell>
+          <Card className="w-full">
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -35,7 +36,7 @@ export function VerifyContent() {
               <CardDescription>Please wait while we sign you in</CardDescription>
             </CardHeader>
           </Card>
-        </div>
+        </AuthShell>
         <Footer />
       </main>
     )
@@ -44,8 +45,8 @@ export function VerifyContent() {
   if (status === "authenticated") {
     return (
       <main className="flex min-h-screen flex-col">
-        <div className="flex flex-1 items-center justify-center p-4">
-          <Card className="w-full max-w-md">
+        <AuthShell>
+          <Card className="w-full">
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
                 <CheckCircle className="h-6 w-6 text-green-500" />
@@ -54,7 +55,7 @@ export function VerifyContent() {
               <CardDescription>Redirecting you to the app...</CardDescription>
             </CardHeader>
           </Card>
-        </div>
+        </AuthShell>
         <Footer />
       </main>
     )
@@ -63,8 +64,8 @@ export function VerifyContent() {
   // Unauthenticated - redirect to home
   return (
     <main className="flex min-h-screen flex-col">
-      <div className="flex flex-1 items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <AuthShell>
+        <Card className="w-full">
           <CardHeader className="text-center">
             <CardTitle>Session Expired</CardTitle>
             <CardDescription>Please sign in again</CardDescription>
@@ -75,7 +76,7 @@ export function VerifyContent() {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </AuthShell>
       <Footer />
     </main>
   )
