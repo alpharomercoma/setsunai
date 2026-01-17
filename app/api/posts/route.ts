@@ -1,18 +1,36 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getSession } from "@/lib/auth"
-import { redis, type Post } from "@/lib/redis"
+import { getServerSession } from "next-auth"
+import { authOptions, redis } from "@/lib/auth-options"
+import { type Post } from "@/lib/redis"
+
+// Extended session type with user id
+interface SessionWithId {
+  user?: {
+    id: string
+    name?: string | null
+    email?: string | null
+    image?: string | null
+  }
+  expires: string
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession()
+    const session = await getServerSession(authOptions) as SessionWithId | null
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const { encryptedContent, iv } = await request.json()
+    const body = await request.json()
+    const { encryptedContent, iv } = body
 
     if (!encryptedContent || !iv) {
       return NextResponse.json({ error: "Invalid post data" }, { status: 400 })
+    }
+
+    // Validate encrypted content format
+    if (typeof encryptedContent !== "string" || typeof iv !== "string") {
+      return NextResponse.json({ error: "Invalid data format" }, { status: 400 })
     }
 
     const post: Post = {
@@ -24,10 +42,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Store post
-    await redis.set(`post:${post.id}`, JSON.stringify(post))
+    await redis.set(`setsunai:post:${post.id}`, JSON.stringify(post))
 
     // Add to user's post list (sorted by timestamp, newest first)
-    await redis.zadd(`posts:${session.user.id}`, {
+    await redis.zadd(`setsunai:posts:${session.user.id}`, {
       score: post.createdAt,
       member: post.id,
     })
@@ -41,7 +59,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession()
+    const session = await getServerSession(authOptions) as SessionWithId | null
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
@@ -53,7 +71,7 @@ export async function GET(request: NextRequest) {
     // Get post IDs from sorted set (newest first)
     const startScore = cursor ? Number.parseInt(cursor) - 1 : "+inf"
 
-    const postIds = await redis.zrange(`posts:${session.user.id}`, startScore, "-inf", {
+    const postIds = await redis.zrange(`setsunai:posts:${session.user.id}`, startScore, "-inf", {
       byScore: true,
       rev: true,
       count: limit + 1,
@@ -67,7 +85,7 @@ export async function GET(request: NextRequest) {
     // Fetch post data
     const posts: Post[] = []
     for (const postId of postIds.slice(0, limit)) {
-      const postData = await redis.get(`post:${postId}`)
+      const postData = await redis.get(`setsunai:post:${postId}`)
       if (postData) {
         const post = typeof postData === "string" ? JSON.parse(postData) : postData
         posts.push(post)
@@ -86,19 +104,20 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getSession()
+    const session = await getServerSession(authOptions) as SessionWithId | null
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const { id, encryptedContent, iv } = await request.json()
+    const body = await request.json()
+    const { id, encryptedContent, iv } = body
 
     if (!id || !encryptedContent || !iv) {
       return NextResponse.json({ error: "Invalid post data" }, { status: 400 })
     }
 
     // Fetch existing post to verify ownership
-    const existingPost = await redis.get(`post:${id}`)
+    const existingPost = await redis.get(`setsunai:post:${id}`)
     if (!existingPost) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
@@ -117,7 +136,7 @@ export async function PUT(request: NextRequest) {
       updatedAt: Date.now(),
     }
 
-    await redis.set(`post:${id}`, JSON.stringify(updatedPost))
+    await redis.set(`setsunai:post:${id}`, JSON.stringify(updatedPost))
 
     return NextResponse.json({ success: true, post: updatedPost })
   } catch (error) {
@@ -128,7 +147,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getSession()
+    const session = await getServerSession(authOptions) as SessionWithId | null
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
@@ -141,7 +160,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Fetch existing post to verify ownership
-    const existingPost = await redis.get(`post:${id}`)
+    const existingPost = await redis.get(`setsunai:post:${id}`)
     if (!existingPost) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
@@ -153,8 +172,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Remove from sorted set and delete post
-    await redis.zrem(`posts:${session.user.id}`, id)
-    await redis.del(`post:${id}`)
+    await redis.zrem(`setsunai:posts:${session.user.id}`, id)
+    await redis.del(`setsunai:post:${id}`)
 
     return NextResponse.json({ success: true })
   } catch (error) {

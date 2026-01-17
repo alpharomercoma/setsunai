@@ -40,7 +40,12 @@ export async function decryptContent(encrypted: string, iv: string, key: CryptoK
   const encryptedData = base64ToBuffer(encrypted)
   const ivData = base64ToBuffer(iv)
 
-  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: ivData }, key, encryptedData)
+  const decrypted = await crypto.subtle.decrypt(
+    // @ts-expect-error - Uint8Array type compatibility issue with newer TypeScript
+    { name: "AES-GCM", iv: ivData },
+    key,
+    encryptedData
+  )
 
   return decoder.decode(decrypted)
 }

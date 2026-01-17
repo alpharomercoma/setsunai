@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { useSession, signOut } from "next-auth/react"
 import { AuthForm } from "@/components/auth-form"
 import { PinUnlock } from "@/components/pin-unlock"
 import { PostComposer } from "@/components/post-composer"
@@ -12,35 +13,26 @@ import { useRouter } from "next/navigation"
 
 type AppState = "loading" | "unauthenticated" | "needs-pin" | "unlock" | "feed"
 
-interface UserStatus {
-  authenticated: boolean
-  hasPin: boolean
-  name: string
-  email: string
-}
-
 export default function Home() {
+  const { data: session, status } = useSession()
   const [state, setState] = useState<AppState>("loading")
-  const [userStatus, setUserStatus] = useState<UserStatus | null>(null)
+  const [hasPin, setHasPin] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const router = useRouter()
 
-  const checkAuthStatus = useCallback(async () => {
+  const checkPinStatus = useCallback(async () => {
+    if (!session?.user?.id) return
+
     try {
       const res = await fetch("/api/auth/user-status")
-      const data: UserStatus = await res.json()
-
-      if (!data.authenticated) {
-        setState("unauthenticated")
-        return
-      }
-
-      setUserStatus(data)
+      const data = await res.json()
 
       if (!data.hasPin) {
-        router.push(`/auth/setup?name=${encodeURIComponent(data.name || "")}`)
+        router.push(`/auth/setup?name=${encodeURIComponent(session.user.name || "")}`)
         return
       }
+
+      setHasPin(true)
 
       // Check if PIN is already verified in this session
       const pinVerified = sessionStorage.getItem("pinVerified")
@@ -50,13 +42,25 @@ export default function Home() {
         setState("unlock")
       }
     } catch {
-      setState("unauthenticated")
+      setState("unlock")
     }
-  }, [router])
+  }, [session?.user?.id, session?.user?.name, router])
 
   useEffect(() => {
-    checkAuthStatus()
-  }, [checkAuthStatus])
+    if (status === "loading") {
+      setState("loading")
+      return
+    }
+
+    if (status === "unauthenticated") {
+      setState("unauthenticated")
+      return
+    }
+
+    if (status === "authenticated" && session?.user) {
+      checkPinStatus()
+    }
+  }, [status, session, checkPinStatus])
 
   const handleUnlock = () => {
     setState("feed")
@@ -64,20 +68,15 @@ export default function Home() {
 
   const handleLogout = async () => {
     sessionStorage.removeItem("pinVerified")
-    await fetch("/api/auth/logout", { method: "POST" })
+    await signOut({ redirect: false })
     setState("unauthenticated")
-    setUserStatus(null)
   }
 
   const handlePostCreated = () => {
     setRefreshTrigger((prev) => prev + 1)
   }
 
-  const handleAuthenticated = () => {
-    checkAuthStatus()
-  }
-
-  if (state === "loading") {
+  if (state === "loading" || status === "loading") {
     return (
       <div className="flex min-h-screen flex-col">
         <div className="flex flex-1 items-center justify-center">
@@ -92,7 +91,7 @@ export default function Home() {
     return (
       <main className="flex min-h-screen flex-col">
         <div className="flex flex-1 items-center justify-center p-4">
-          <AuthForm onAuthenticated={handleAuthenticated} />
+          <AuthForm />
         </div>
         <Footer />
       </main>
@@ -110,18 +109,18 @@ export default function Home() {
     )
   }
 
-  if (state === "feed" && userStatus) {
+  if (state === "feed" && session?.user) {
     return (
       <div className="flex min-h-screen flex-col">
-        <Header userName={userStatus.name || "User"} onLogout={handleLogout} />
+        <Header userName={session.user.name || "User"} onLogout={handleLogout} />
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6">
           <div className="space-y-6">
             <PostComposer
-              userName={userStatus.name || "User"}
-              userId={userStatus.email}
+              userName={session.user.name || "User"}
+              userId={session.user.id}
               onPostCreated={handlePostCreated}
             />
-            <PostFeed userId={userStatus.email} userName={userStatus.name || "User"} refreshTrigger={refreshTrigger} />
+            <PostFeed userId={session.user.id} userName={session.user.name || "User"} refreshTrigger={refreshTrigger} />
           </div>
         </main>
         <Footer />

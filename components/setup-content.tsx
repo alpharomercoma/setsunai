@@ -2,44 +2,36 @@
 
 import { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { PinSetup } from "@/components/pin-setup"
 import { Loader2 } from "lucide-react"
 
 export function SetupContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [loading, setLoading] = useState(true)
-  const [authenticated, setAuthenticated] = useState(false)
   const [userName, setUserName] = useState("")
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch("/api/auth/user-status")
-        const data = await res.json()
+    if (status === "loading") return
 
-        if (!data.authenticated) {
-          router.push("/")
-          return
-        }
-
-        setAuthenticated(true)
-        setUserName(searchParams.get("name") || data.name || "")
-      } catch {
-        router.push("/")
-      } finally {
-        setLoading(false)
-      }
+    if (status === "unauthenticated") {
+      router.push("/")
+      return
     }
 
-    checkAuth()
-  }, [router, searchParams])
+    if (status === "authenticated" && session?.user) {
+      setUserName(searchParams.get("name") || session.user.name || "")
+      setLoading(false)
+    }
+  }, [status, session, router, searchParams])
 
   const handleComplete = () => {
     router.push("/")
   }
 
-  if (loading) {
+  if (loading || status === "loading") {
     return (
       <div className="flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -47,7 +39,7 @@ export function SetupContent() {
     )
   }
 
-  if (!authenticated) {
+  if (status === "unauthenticated") {
     return null
   }
 

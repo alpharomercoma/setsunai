@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,11 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Lock, Loader2, Mail } from "lucide-react"
 
-interface AuthFormProps {
-  onAuthenticated: () => void
-}
-
-export function AuthForm({ onAuthenticated }: AuthFormProps) {
+export function AuthForm() {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -26,16 +23,14 @@ export function AuthForm({ onAuthenticated }: AuthFormProps) {
     setError("")
 
     try {
-      const res = await fetch("/api/auth/send-magic-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+      const result = await signIn("email", {
+        email,
+        redirect: false,
+        callbackUrl: "/",
       })
 
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || "Failed to send magic link")
+      if (result?.error) {
+        setError("Failed to send magic link. Please try again.")
         return
       }
 
@@ -47,9 +42,14 @@ export function AuthForm({ onAuthenticated }: AuthFormProps) {
     }
   }
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setGoogleLoading(true)
-    window.location.href = "/api/auth/google"
+    try {
+      await signIn("google", { callbackUrl: "/" })
+    } catch {
+      setError("Failed to sign in with Google")
+      setGoogleLoading(false)
+    }
   }
 
   if (magicLinkSent) {

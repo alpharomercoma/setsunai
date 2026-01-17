@@ -18,8 +18,8 @@ export function Header({ userName, onLogout }: HeaderProps) {
         </div>
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <span className="text-sm text-muted-foreground truncate max-w-[120px] sm:max-w-none">{userName}</span>
-          <Button variant="ghost" size="sm" className="shrink-0">
-            <LogOut className="h-4 w-4" onClick={onLogout} />
+          <Button variant="ghost" size="sm" className="shrink-0" onClick={onLogout}>
+            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </div>
